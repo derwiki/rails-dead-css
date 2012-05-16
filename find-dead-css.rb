@@ -19,10 +19,18 @@ def short_path(path)
 end
 
 cssfiles = `find #{STYLESHEET_DIR} -name '*.css'`.split("\n")
-max_filename = cssfiles.map(&:length).max
 cssfiles.each do |cssfile|
-  cmd = "grep -r #{include_path(cssfile)} #{HTML_DIR} | grep add_stylesheet"
-  puts "* Potentially orphaned file: #{short_path(cssfile)}" if `#{cmd}`.empty?
+  cmd = "grep -r #{include_path(cssfile)} #{HTML_DIR} | grep stylesheet"
+  res = `#{cmd}`
+  if res.empty?
+    puts "* Potentially orphaned stylesheet: #{short_path(cssfile)}"
+    images = `grep background-image #{cssfile}`
+    unless images.empty?
+      images.scan(/url\(.*\)/).each do |image|
+        puts "image: #{image.ljust(25)} #{short_path(cssfile)}"
+      end
+    end
+  end
 
   contents = `grep -v ': ' #{cssfile}`
   tokens = {:id => [], :class => []}
