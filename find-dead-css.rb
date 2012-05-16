@@ -10,18 +10,19 @@ REGEXES = {
 STYLESHEET_DIR = ENV['STYLESHEET_DIR'] || 'public/stylesheets'
 HTML_DIR = ENV['HTML_DIR'] || 'app/{views,helpers,controllers}'
 
+def include_path(path)
+  path.split('/').drop(2).last(2).join('/').sub('.css', '')
+end
+
 def short_path(path)
-  path.split('/').drop(2).last(2).join('').sub('.css', '')
+  path.split('/').drop(2).join('/')
 end
 
 cssfiles = `find #{STYLESHEET_DIR} -name '*.css'`.split("\n")
 max_filename = cssfiles.map(&:length).max
 cssfiles.each do |cssfile|
-  res = `grep -r #{short_path(cssfile)} #{HTML_DIR} | grep add_stylesheet`
-  unless res.empty?
-    puts "* Orphan file: #{cssfile}"
-    next
-  end
+  cmd = "grep -r #{include_path(cssfile)} #{HTML_DIR} | grep add_stylesheet"
+  puts "* Potentially orphaned file: #{short_path(cssfile)}" if `#{cmd}`.empty?
 
   contents = `grep -v ': ' #{cssfile}`
   tokens = {:id => [], :class => []}
@@ -35,7 +36,8 @@ cssfiles.each do |cssfile|
     tokens[key].uniq!
     tokens[key].each do |val|
       uses = `grep -R #{val} #{HTML_DIR}`
-      puts [cssfile.ljust(max_filename + 1), val].join('') if uses.empty?
+      cols = [30, val.length+1].max
+      puts [val.ljust(cols), short_path(cssfile)].join('') if uses.empty?
     end
   end
 end
