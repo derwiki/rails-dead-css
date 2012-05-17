@@ -23,6 +23,8 @@ cssfiles = `find #{CSS_DIR} -name '*.css'`.split("\n")
 cssfiles.each do |cssfile|
   cmd = "grep -r #{include_path(cssfile)} #{HTML_DIR} | grep stylesheet"
   res = `#{cmd}`
+
+  # if this is dead, can we make any educated guesses?
   if res.empty?
     linecount = `wc -l #{cssfile}`.split(' ').first.strip
     puts "* Potentially orphaned stylesheet: #{short_path(cssfile)} (#{linecount} LOC)"
@@ -34,20 +36,20 @@ cssfiles.each do |cssfile|
     end
   end
 
-  contents = `grep -v ': ' #{cssfile}`
-  tokens = {:id => [], :class => []}
-  contents.split("\n").each do |line|
-    REGEXES.each do |key, regex|
-      token = line.scan(regex).to_s.scan(/\w/).join
-      tokens[key] << token unless token.empty?
-    end
+  # extract all classes and ids
+  tokens = File.read(cssfile).split("\n").map do |line|
+    line.split(/[ \.:,]/).
+      select {|t| t =~ /^[\.#]/}.
+      delete_if {|t| t =~ /[};\)]/}.
+      delete_if {|t| t =~ /[A-Fa-f0-9]{6}/}.
+      map {|t| t[1..-1]}
+  end.flatten.uniq
+  tokens.each do |token|
+    uses = `grep -R '#{token}' #{HTML_DIR}`
+    cols = [30, token.length+1].max
+    puts [token.ljust(cols), short_path(cssfile)].join('') if uses.empty?
   end
-  REGEXES.each do |key, _|
-    tokens[key].uniq!
-    tokens[key].each do |val|
-      uses = `grep -R #{val} #{HTML_DIR}`
-      cols = [30, val.length+1].max
-      puts [val.ljust(cols), short_path(cssfile)].join('') if uses.empty?
-    end
-  end
+
+  #TODO line separator if file yielded reults
+  #TODO tokens should be a single list, not a hash
 end
