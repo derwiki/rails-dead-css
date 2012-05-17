@@ -7,7 +7,8 @@ REGEXES = {
  :id => /[#]\w+ \{/,
  :class => /[.]\w+ \{/
 }
-STYLESHEET_DIR = ENV['STYLESHEET_DIR'] || 'public/stylesheets'
+CSS_DIR = ENV['CSS_DIR'] || 'public/stylesheets'
+puts "Using CSS_DIR=#{CSS_DIR}"
 HTML_DIR = ENV['HTML_DIR'] || 'app/{views,helpers,controllers}'
 
 def include_path(path)
@@ -18,7 +19,7 @@ def short_path(path)
   path.split('/').drop(2).join('/')
 end
 
-cssfiles = `find #{STYLESHEET_DIR} -name '*.css'`.split("\n")
+cssfiles = `find #{CSS_DIR} -name '*.css'`.split("\n")
 cssfiles.each do |cssfile|
   cmd = "grep -r #{include_path(cssfile)} #{HTML_DIR} | grep stylesheet"
   res = `#{cmd}`
