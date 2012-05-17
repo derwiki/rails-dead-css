@@ -24,7 +24,8 @@ cssfiles.each do |cssfile|
   cmd = "grep -r #{include_path(cssfile)} #{HTML_DIR} | grep stylesheet"
   res = `#{cmd}`
   if res.empty?
-    puts "* Potentially orphaned stylesheet: #{short_path(cssfile)}"
+    linecount = `wc -l #{cssfile}`.split(' ').first.strip
+    puts "* Potentially orphaned stylesheet: #{short_path(cssfile)} (#{linecount} LOC)"
     images = `grep background-image #{cssfile}`
     unless images.empty?
       images.scan(/url\(.*\)/).each do |image|
