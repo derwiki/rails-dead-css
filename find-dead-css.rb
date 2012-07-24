@@ -38,10 +38,11 @@ cssfiles.each do |cssfile|
 
   # extract all classes and ids
   tokens = File.read(cssfile).split("\n").map do |line|
-    line.split(/[ \.:,]/).
+    # need to split on . BUT not swallow dot
+    line.split(/[ :,{}]/).
       select {|t| t =~ /^[\.#]/}.
       delete_if {|t| t =~ /[};\)]/}.
-      delete_if {|t| t =~ /[A-Fa-f0-9]{6}/}.
+      delete_if {|t| t =~ /^#[A-Fa-f0-9]{6}$/}.
       map {|t| t[1..-1]}
   end.flatten.uniq
   tokens.each do |token|
